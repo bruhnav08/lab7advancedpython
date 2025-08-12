@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import os
 
 # Page config
 st.set_page_config(page_title="GST-Based Dynamic Pricing Simulator", page_icon="💰", layout="centered")
@@ -8,8 +9,13 @@ st.set_page_config(page_title="GST-Based Dynamic Pricing Simulator", page_icon="
 st.title("GST-Based Dynamic Pricing Simulator")
 st.subheader("Adjust business factors and get smart pricing suggestions")
 
-# Session state for history
-if "history" not in st.session_state:
+# File to store history
+HISTORY_FILE = "history.csv"
+
+# Load history from CSV if it exists
+if os.path.exists(HISTORY_FILE):
+    st.session_state.history = pd.read_csv(HISTORY_FILE).to_dict(orient="records")
+else:
     st.session_state.history = []
 
 # GST Categories
@@ -64,14 +70,17 @@ final_price = price_after_discount + gst_amount
 profit = final_price - cost_price
 profit_margin = (profit / final_price) * 100 if final_price > 0 else 0
 
-# Save to history
+# Save recommendation to history and CSV
 if st.sidebar.button("Save Recommendation"):
-    st.session_state.history.append({
+    new_entry = {
         "Product": product_name,
         "Category": category,
         "Final Price": round(final_price, 2),
         "Profit Margin %": round(profit_margin, 2)
-    })
+    }
+    st.session_state.history.append(new_entry)
+    pd.DataFrame(st.session_state.history).to_csv(HISTORY_FILE, index=False)
+    st.success("Recommendation saved!")
 
 # Display results
 col1, col2 = st.columns(2)
